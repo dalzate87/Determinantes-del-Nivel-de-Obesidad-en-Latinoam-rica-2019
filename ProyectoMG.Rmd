@@ -1,0 +1,894 @@
+---
+title: "Determinantes de Niveles de Obesidad en Paises de Latinoamérica 2019"
+author: "Diego Alzate, Juliana Fiquitiva , Estefania Silva"
+date: "2024-03-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, include=FALSE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(knitr)
+library(lmtest)
+library(MASS)
+library(remotes)
+library(zoo)
+library(psych)
+library(VGAM)
+
+```
+
+### **Introducción** ###
+
+<div style="text-align: justify">
+
+Desde 1975, la obesidad casi se ha triplicado en todo el mundo. En 2016, más de 1.900 millones de adultos mayores de 18 años tenían sobrepeso y más de 650 millones de ellos eran obesos.Según (World Health Organization: WHO, 2024) “El sobrepeso y la obesidad se definen como una acumulación anormal o excesiva de grasa que puede ser perjudicial para la salud.”El incremento en el consumo de alimentos procesados, se ha convertido en una de las principales causas de la obesidad. La grasa y el azúcar son una parte importante de la dieta actual y contribuyen a este problema. Otro problema adicional es el sedentarismo asociado a la urbanización.
+
+El sobrepeso y la obesidad son un problema multifactorial y resultan de una combinación compleja de factores económicos, genéticos, sociales y ambientales. Elementos como la historia familiar son indicativos de que el sobrepeso y la obesidad pueden transmitirse de generación en generación, la edad y el género nos revela que tanto adultos,niños, hombres y mujeres enfrentan desafíos específicos. Los hábitos alimenticios y de actividad física junto con patrones familiares y culturales ejercen una influencia directa en el peso de un individuo. La interacción de estos elementos complica la pérdida de peso y aumenta la propensión a la obesidad. Abordar este problema requiere una comprensión de estos factores para implementar estrategias efectivas en la prevención y tratamiento.
+
+A nivel global, la obesidad representa un desafío significativo para los sistemas de salud pública, La creciente prevalencia de esta condición no sólo conlleva riesgos directos para la salud individual, sino que también ejerce una presión significativa sobre los recursos médicos y las estructuras de atención sanitaria a nivel global.
+La necesidad de un enfoque general se manifiesta en la comprensión de que la obesidad es un problema complejo que no puede ser resuelto exclusivamente a nivel individual. Considerar las dimensiones socioeconómicas implica abordar las inequidades en el acceso a recursos y oportunidades que contribuyen a estilos de vida saludables. Además, la influencia del entorno ambiental, que abarca desde la disponibilidad de alimentos nutritivos hasta la accesibilidad de espacios para la actividad física, destaca la importancia de medidas políticas y comunitarias.
+
+En Latinoamérica es común frecuentar restaurantes de comida rápida, la compra de gaseosas, paquetes y alimentos ricos en grasa.Esto se debe a su fácil accesibilidad, y la mayoría de veces, esta opción se usa para satisfacer las necesidades alimentarias diarias. (Julio Berdegué, 2019) afirma que “El explosivo aumento de la obesidad que afecta al 24% de la población regional, unos 105 millones de personas, prácticamente el doble del nivel global de 13,2%”. Los efectos de estas decisiones influyen en el futuro cuando las personas tienen enfermedades asociadas con el sobrepeso y obesidad; o cuando finalmente mueren debido a esta situación, esto se afirma en el documento panorama de la seguridad alimentaria y nutricional en América Latina y el Caribe para el año 2019 (FAO, OPS, WFP y UNICEF. 2019)  “600.000 personas mueren cada año en América Latina y el Caribe por enfermedades relacionadas con la mala alimentación, como diabetes, hipertensión arterial y enfermedades cardíacas.”
+
+Dado el panorama de hábitos de consumo alimenticios en América Latina y el caribe según la FAO (Organización para las Naciones Unidas para la Alimentación y la Agricultura, 2019) Existe una oferta agregada de alimentos suficientes para toda la población en América Latina y el Caribe, sin embargo la presencia de desigualdad y pobreza inciden en la distribución de esta oferta alimentaria generando grupos poblacionales con poco acceso a alimentos, lo que conlleva a condiciones crónicas de desnutrición y enfermedades asociadas a este. Por otra parte el azúcar, las grasas y los aceites son los tres elementos de mayor consumo en la región, donde el 14.2% como la proporción de energia proviene del azúcar, siendo esta mayor al 10% de proporción de energia recomendada que provee este grupo alimentacio segun la Organización Mundial de la Salud.
+
+Ahora como factores estructurales, existen fenómenos llamados Desiertos y Pántanos Alimentarios, en primera medida se asocia a la ausencia de alimentos y la lejanía geográfica respecto a las fuentes de acceso de alimentos, por otra parte los pántanos alimentarios reflejan una alta proporción en la oferta de alimentos, de alimentos ultraprocesados respecto a los alimentos altos en proteinas, grasas saludables y micronutrientes, lo que genera un precio relativo menor en los alimentos ultraprocesados respecto a los alimentos de alta calidad alimentaria, incentivando una demanda mayor de alimentos de baja calidad repercutiendo a largo plazo en la salud de las personas que son mas sensibles a variaciones del precio especialmente las personas de bajo poder adquisitivo, presionando a largo plazo el gasto público en salud por enfermedades prevenibles como Diabetes, Obesidad e Hipertensión entre otras.
+
+<div/>
+
+<div style="text-align: justify">
+### **Variables:**
+
+- Consumo frecuente de alimentos con altas calorías: Variable cualitativa que clasifica en si y no, si el individuo consume frecuentemente alimentos procesados como salchichas, tocino, jamón, alimentos fritos y lácteos.
+
+- Frecuencia de consumo de verduras o vegetales: Variable numérica de 1 a 3, que indica el número de  porciones que se consume por día de verduras y vegetales; La OMS recomienda comer unos 400 gramos de fruta y verduras al día, lo que resulta muy útil para prevenir enfermedades crónicas como enfermedades cardiacas, cáncer, diabetes tipo 2 y obesidad.
+
+- Número de comidas principales: Variable numérica de 1 a 4, que indica el número de comidas que el individuo consume como comida principal (Se define comida principal como una comida alta en nutrientes, carbohidratos y proteina)
+
+- Consumo de agua diario: Variable numérica de 1 a 3, que indica la cantidad de litros de agua que consume al día el individuo; Se recomienda la ingesta de agua (de todas las fuentes) 3.0 litros para los hombres y 2,7 litros por día para las mujeres para mantener una correcta hidratación.
+
+- Consumo de alcohol: Variable categórica que clasifica la frecuencia en que el individuo consume alcohol, clasificándolo en No, algunas veces, frecuentemente y siempre. Según estudios el abuso de alcohol ocasiona una carga de morbilidad y tiene importantes consecuencias sociales y económicas.
+
+Las variables relacionadas con la condición física son:
+
+- Frecuencia de actividad física: Variable numérica de 0 a 3 que indica la cantidad de horas al día que el individuo practica actividad física; Según la OMS, Latinoamérica es la región del mundo con el mayor porcentaje de población con una actividad física insuficiente, alcanzando el 39%.
+
+- Tiempo de uso de dispositivos tecnológicos: Variable numérica que indica la cantidad de horas al día que el individuo dispone para uso de tecnología; Colombia ocupa el segundo lugar en el mundo en el tiempo en el que los ciudadanos dedican a las redes sociales según la Organización para la Cooperación y el Desarrollo Económico(OCDE).
+
+- Transporte utilizado: Variable cualitativa que clasifica el medio de transporte que usa la persona diariamente, clasificándolo en automóvil, bicicleta, moto, transporte público y caminando.
+
+
+### **OBJETIVOS:** ###
+
+**Objetivo General** 
+
+- Determinar los factores de riesgo con mayor incidencia en la obesidad y sobrepeso para los paises de Colombia, Perú y México así como describirlos y encontrar relaciones entre estos. 
+
+**Objetivos Específicos:**
+
+- Modelar el peso en su espectro completo a través del IMC ver si existen cambios respecto al enfoque con variable respuesta cualitativa.
+
+- Determinar los factores de riesgo más significativos como predictores de la obesidad y sobrepeso. 
+
+- Usar métodos de regularización para generar estimaciones en muestras nuevas respecto a la clasificación de peso normal y obesidad dadas las variables predictoras a través del uso de Modelos Lineales Generalizados.
+
+
+<div/>
+
+```{r, echo=TRUE, include=TRUE}
+obesidad<-read.csv("ObesityDataSet.csv")
+obesidad<-data.frame(obesidad)
+sum(is.na(obesidad))
+```
+
+- Al observar que no se encuentran datos faltantes se procede a realizar un análisis descriptivo y exploratorio de los datos.
+
+```{r, echo=FALSE, include = TRUE}
+dim(obesidad)
+```
+- Se observan 8 variables cuantitativas las cuales son edad(14-61), estatura(1.45-1.98), peso(39-173), frecuencia de consumo de vegetales(1-3), número de comidas principales(1-4), consumo de agua diaria(1-3), frecuencia de actividad física(0-3 veces por semana) y tiempo de uso de la tecnologia(0-2).Las 9 variables restantes son cualitativas: género(Female, Male), antecedentes familiares(yes, no), frecuencia de consumo de altas calorias(yes, no), consumo de meriendas(no,	Sometimes, Frequently, Always), fumador(yes,no), monitoreo de calorias(yes, no), consumo de alcohol(no,	Sometimes, Frequently, Always), medio de transporte(Automobile,Bike, Motorbike, Public_Transportation, Walking) y clasificación de obesidad(Insufficient_Weight, Normal_Weight, Obesity_Type_I, Obesity_Type_II, Obesity_Type_III, Overweight_Level_I, Overweight_Level_II).
+
+```{r, include=FALSE}
+head(obesidad)
+```
+
+```{r, include=FALSE}
+summary(obesidad)
+```
+
+```{r, include= FALSE}
+#preprocesamiento
+obesidad$Gender<-factor(obesidad$Gender)
+obesidad$family_history_with_overweight<-factor(obesidad$family_history_with_overweight)
+obesidad$FAVC<-factor(obesidad$FAVC)
+obesidad$CAEC<-factor(obesidad$CAEC)
+obesidad$SMOKE<-factor(obesidad$SMOKE)
+obesidad$SCC<-factor(obesidad$SCC)
+obesidad$CALC<-factor(obesidad$CALC)
+obesidad$MTRANS<-factor(obesidad$MTRANS)
+obesidad$NObeyesdad<-factor(obesidad$NObeyesdad)
+```
+
+```{r, include = FALSE}
+#preprocesamiento
+genero<-obesidad$Gender
+edad<-obesidad$Age
+estatura<-obesidad$Height
+peso<-obesidad$Weight
+antecedentes_familiares_sobrepeso<-obesidad$family_history_with_overweight
+fconsumo_altas_calorias<-obesidad$FAVC
+fconsumo_vegetales<-obesidad$FCVC
+comidas_principales<-obesidad$NCP
+nmeriendas<-obesidad$CAEC
+fumador<-obesidad$SMOKE
+consumo_agua_diaria<-obesidad$CH2O
+monitoreo_calorias<-obesidad$SCC
+factividad_fisica<-obesidad$FAF
+t_uso_tecnologia<-obesidad$TUE
+consumo_alcohol<-obesidad$CALC
+medio_transporte<-obesidad$MTRANS
+clasificacion_obesidad<-obesidad$NObeyesdad
+
+#
+
+obesidad_f <- data.frame(genero,edad,estatura,peso,antecedentes_familiares_sobrepeso,
+                     fconsumo_altas_calorias,fconsumo_vegetales,comidas_principales,
+                     nmeriendas,fumador,consumo_agua_diaria,monitoreo_calorias,
+                     factividad_fisica,t_uso_tecnologia,consumo_alcohol,medio_transporte,
+                      clasificacion_obesidad)
+
+```
+
+```{r, include =TRUE}
+#Reasignar variable de sobrepeso
+obesidad_f <- obesidad_f %>% 
+  mutate(tipo_peso = case_when(
+    clasificacion_obesidad %in% c("Insufficient_Weight")~ 0,
+    clasificacion_obesidad %in%    c("Normal_Weight") ~ 1,
+    clasificacion_obesidad %in%    c("Obesity_Type_I","Obesity_Type_II"
+                                     ,"Obesity_Type_III") ~ 2,
+    clasificacion_obesidad %in% c("Overweight_Level_I",
+                                  "Overweight_Level_II") ~ 3) )
+#
+obesidad_f$tipo_peso <- factor(obesidad_f$tipo_peso) 
+
+```
+
+
+
+```{r,include=FALSE}
+datos_cuanti <- dplyr::select(obesidad_f, "edad","estatura","peso",
+                     "fconsumo_vegetales","comidas_principales",
+                     "consumo_agua_diaria","factividad_fisica","t_uso_tecnologia")
+```
+
+### Gráfico 1: Distribución y Coeficientes de Correlación de las Variables Cuantitativas:
+
+```{r,echo=FALSE, warning=FALSE}
+pairs.panels(datos_cuanti,
+             smooth = TRUE,      # Si TRUE, dibuja ajuste suavizados de tipo loess
+             scale = FALSE,      # Si TRUE, escala la fuente al grado de correlación
+             density = TRUE,     # Si TRUE, añade histogramas y curvas de densidad
+             ellipses = TRUE,    # Si TRUE, dibuja elipses
+             method = "pearson", # Método de correlación (también "spearman" o "kendall")
+             pch = 21,           # Símbolo pch
+             lm = FALSE,         # Si TRUE, dibuja un ajuste lineal en lugar de un ajuste LOESS
+             cor = TRUE,         # Si TRUE, agrega correlaciones
+             jiggle = FALSE,     # Si TRUE, se añade ruido a los datos
+             factor = 2,         # Nivel de ruido añadido a los datos
+             hist.col = 4,       # Color de los histogramas
+             stars = TRUE,       # Si TRUE, agrega el nivel de significación con estrellas
+             ci = TRUE)
+```
+
+```{r, warning=FALSE, echo=FALSE}
+summary(datos_cuanti)
+```
+
+- La persona más joven en la encuesta tiene 14 años y la persona más vieja tiene 61 años, por otra parte el 50% de los encuestados tienen menos de 22 y el 75% tiene 26 años o menos, lo que nos dice que hay una alta concentración de adolescentes y adultos jóvenes en proporción a la población vieja.
+
+- La estatura promedio en los encuestados es de 1.70 metros, donde la persona más baja mide 1.45 metros y la persona más alta 1.98 metros, por otra parte el 50% de las personas más bajas miden 1.70 metros o menos.
+
+- Respecto al peso, la persona con menor peso tiene 39kg de peso y la persona con mayor peso tiene 173 kg. El 50% de las personas pesan 83 kg o menos, donde si comparamos esta medida de peso mediana con la altura mediana observamos que existen indicios de sobrepeso y obesidad en la muestra dada la proporcion asociada al IMC (Indice de Masa Corporal). 
+
+- Dentro de la frecuencia diaria de consumo de vegetales(cantidad de porciones al día), tenemos que las personas con menor consumo de vegetales, solamente ingieren una porción de frutas o verduras al día, mientras que las personas que mayor nivel de consumo de vegetales tienen, ingieren 3 porciones diarias. La Organización Mundial de la Salud aconseja el consumo de 5 porciones diarias de frutas y/o vegetales para prevenir enfermedades asociadas a los hábitos de vida, en este orden de ideas podemos observar que el total de encuestados tienen un consumo diario de vegetales deficiente.
+
+- En la frecuencia diaria de consumo de comidas principales(cantidad de comidas principales al dia), las personas con menor frecuencia consumen una comida principal al día, mientras que aquellas con mayor frecuencia consumen 4 comidas principales al día, donde el promedio de personas consumen 3 comidas y el 50% de personas consumen 3 comidas o menos al día igual que el 75% de las personas en la encuesta. La Organización Mundial de la salud recomienda el consumo de 3 comidas principales día (Desayuno, Almuerzo, Cena) donde estas se caracterizan por tener alto contenido de macronutrientes y micronutrientes. En general para los encuestados su frecuencia diaria de consumo de comidas principales es buena, respecto a las necesidades nutricionales diarias para mantener una buena salud.
+
+- La cantidad de litros diarios de agua bebidos, tenemos que las personas con menor consumo de agua beben 1 Litro al día, mientras que las personas con mayor consumo diario beben 3 Litros. En promedio los encuestados beben 2 litros al igual que el 50% de los individuos de la muestra, según la OMS la recomendación diaria es de 2.0 a 2.5 litros para  mujeres y hombres respectivamente, en ese orden de ideas, los encuestados tienen un comportamiento relativamente saludable respecto a la cantidad de litros de agua que beben al día.
+
+- Dentro de la frecuencia semanal de actividad física, hay individuos que no se ejercitan ni un día a la semana, mientras que los más atléticos de la muestra se ejercitan 3 veces a la semana. En promedio los individuos se ejercitan solo una vez a la semana y el 70% de los que menos se ejercitan lo hacen 1.6 veces por semana. Según la OMS se recomienda realizar actividad física moderada por lo menos 2 veces a la semana, por lo que en la muestra los encuentados el 70% tienen niveles insuficientes de ejercicio semanal.
+
+- Dentro de los hábtios de consumo de tecnología, hay individuos que no usan tecnología en absoluto mientras que los que mayor uso le dan a esta, dedican 2 horas diarias en ella. En promedio se dedican 0.65 horas diarias de consumo de tecnología, donde el 50% de individuos que menor uso le dan dedican 0.62 horas díarias o menos. Dentro de los parámetros de Salud la OMS recomienda dar un uso moderado diario de tecnología, donde se considera normal el uso mientras tanto no interfiera en las actividades diarias de una persona, como la alimentación, el descanso, el trabajo y estudio etc. A partir de sobrepasar estas barreras su uso se consideraria patológico.
+
+- Se evidencia qué existe una correlacion positiva media 0.46 entre estatura y peso, esto se debe al IMC, el cuál sirve para la categorización del peso: bajo peso, peso saludable, sobrepeso y obesidad.
+
+- Se observa qué  la estatura y la actividad fisica están correlacionadas positivamente de forma débil 0.29 , la actividad física moderada ayuda a desarrollar los músculos y huesos.
+
+- Respecto a comidas principales y estatura existe una correlacion positiva débil 0.24, los alimentos son necesarios para el crecimiento y desarrollo, especialmente en edades escolares. Un análisis realizado por la revista Lancet (2019) afirma qué la alimentación deficiente en los niños de edad escolar puede contribuir a una diferencia promedio de 20 cm en la altura entre los individuos de diferentes países.
+
+- Existe una correlación negativa débil entre edad y uso tecnológico de -0.30 ,es decir cuando la edad aumenta el uso de la tecnología tiende a disminuir.
+
+### Gráfico 2: Frecuencia de Actividad Física por Género ###
+```{r, echo=FALSE, warning=FALSE}
+ge <- ggplot(obesidad_f, aes(x=genero, y=factividad_fisica)) + 
+  geom_boxplot( color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,
+        outlier.colour="red",
+        outlier.fill="red",
+        outlier.size=3)+
+  theme_classic()+
+  xlab("Frecuencia de actividad fisica")+
+  ylab("Genero")
+
+#
+ge
+```
+
+- Se puede observar en el **Grafico 2** que la caja para el género femenino es más alta y la mediana está ligeramente por debajo de la mitad del RIC, lo que nos indica una mayor variabilidad en la frecuencia de actividad física en comparación con el género masculino, La caja es más baja, nos muestra menor variabilidad en la frecuencia de actividad física. La mediana está justo en la mitad de la caja, lo que nos indica una distribución simétrica de los datos en torno a la mediana.
+
+- Se podría describir que la frecuencia de actividad física tanto para el 50% de hombres y de mujeres es similar para ambos géneros,sin embargo a nivel global se observa que los hombres realizan una mayor cantidad de ejercicio a nivel semanal que las mujeres.
+
+
+### Gráfico 3: Frecuencia de Consumo de Alcohol y Peso
+```{r, echo = FALSE, warning=FALSE}
+gd <- ggplot(obesidad_f, aes(x=consumo_alcohol, y=peso)) + 
+  geom_boxplot( 
+                
+        color="blue",
+        fill="blue",
+        alpha=0.2,
+        
+        notch=TRUE,
+        notchwidth = 0.8,
+    
+        outlier.colour="red",
+        outlier.fill="red",
+        outlier.size=3
+    )+
+  theme_classic()+
+  xlab("Consumo de alcohol")+
+  ylab("Peso")
+gd
+```
+
+- Se puede observar en el **Gráfico 3** que las medianas de los individuos que consumen alcohol siempre y a veces son distintas, es decir el peso de los que siempre consumen alcohol tiende a ser constante mientras que los que consumen a veces tienen el mayor rango de peso aproximadamente desde 39kg hasta por encima de 100 kg representando esto una alta dispersión, existen valores atípicos en el peso de los que consumen frecuentemente alcohol, es decir individuos con pesos atipicamente bajos y atipicamente altos. 
+Manteniendo todo constante el alcohol parece no tener un impacto significativo en el peso. 
+
+### Gráfico 4: Distribución de los Fumadores por Edad ###
+```{r, echo = FALSE, warning=FALSE}
+gc <- ggplot(obesidad_f, aes(x=fumador, y=edad)) + 
+  geom_boxplot( 
+                
+        color="blue",
+        fill="blue",
+        alpha=0.2,
+        
+        notch=TRUE,
+        notchwidth = 0.8,
+    
+        outlier.colour="red",
+        outlier.fill="red",
+        outlier.size=3
+    )+
+  theme_classic()+
+  xlab("Fumador")+
+  ylab("Edad")
+gc
+```
+
+- En el **Gráfico 4** la caja de los no fumadores es relativamente más corta a comparación de la de fumadores, lo que nos indica un RIC más pequeño. Esto nos indica que las edades de los no fumadores están más agrupadas alrededor de 25 aproximadamente a comparación de la de fumadores donde la variabilidad es mayor. Los bigotes en el grupo de no fumadores se extienden desde cerca de los 20 años hasta cerca de los 50 años, indicando que dentro de este rango se encuentran la mayoría de las edades, excluyendo valores atípicos en comparación en el grupo de fumadores. También se extienden a través de un rango amplio de edades, pero con menos valores atípicos arriba del bigote superior.Hay varios valores atípicos en la variable de no fumadores por encima del bigote superior, indicando que hay individuos de edades significativamente más altas que no son comunes dentro del grupo a comparación de los fumadores.
+
+Intuitivamente tenemos que la edad de no fumadores se centra entre los 20 a 25 años aproximadamente, existiendo valores atípicos donde individuos por encima de los 30 años no son fumadores, mientras que el rango de edad de fumadores en un 50% se centra entre los 22 a 32 años, y es común que personas de más de 30 años sean fumadores. 
+
+
+### Gráfico 5: Distribución del Peso corporal según la presencia de antecedentes familiares de Obesidad ###
+
+```{r, echo = FALSE, warning=FALSE}
+gb <- ggplot(obesidad_f, aes(x=antecedentes_familiares_sobrepeso, y=peso)) + 
+  geom_boxplot( 
+                
+        color="blue",
+        fill="blue",
+        alpha=0.2,
+        
+        notch=TRUE,
+        notchwidth = 0.8,
+    
+        outlier.colour="red",
+        outlier.fill="red",
+        outlier.size=3
+    )+
+  theme_classic()+
+  xlab("Antecedentes de familiares con sobrepeso")+
+  ylab("Peso")
+gb
+```
+
+- En el **Gráfico 5** Podemos observar que el 50% de los individuos que no tienen antecedentes familiares pesan 60 kilogramos o menos, mientras que aquellos que si tienen antecedentes familiares de sobrepeso, pesan entre 70kg a 90kg aproximadamente.
+Lo que nos sugiere en primera medida que la presencia de antecedentes familiares de sobrepeso incide en el riesgo de tener sobrepeso para el individuo, por otra parte aquellos que tienen antecedentes familiares tienen un amplio rango de peso, pero en su posición central es decir el 50% de los individuos con antecedentes familiares pesan más que el 50% central de los que no tienen sobrepeso. También vemos que existen individuos atípicos en ambas categorías, es decir personas con un peso muy alto que está por encima de los valores de peso para los que tienen y no tienen antecedentes familiares de obesidad.
+
+
+```{r, include= FALSE, warning=FALSE}
+mtable<-as.data.frame(prop.table(table(obesidad_f$medio_transporte))*100)
+
+colnames(mtable) <- c("transporte","frecuencia")
+mtable$frecuencia <- round(mtable$frecuencia,2)
+kable(mtable,col.names = c("Transporte", "Frecuencia (%)"), caption = "Uso de Distintos Medios de Transporte ")
+```
+
+### Gráfico 7: Frecuencia de Uso de Distintos Medios de Transporte ###
+
+```{r, echo=FALSE, warning=FALSE}
+
+g1<-ggplot(data=mtable,aes(x=transporte,y=frecuencia,fill=transporte)) 
+g1<- g1+geom_bar(stat ="identity" )
+g1<- g1+xlab("Medio de transporte")
+g1<-g1+ylab("Frecuencia(%)")
+g1<-g1+theme_classic()
+g1<-g1+geom_text(aes(label=paste(frecuencia,"%")),vjust=-0.3,color="black")
+g1<-g1+scale_fill_brewer(palette="Blues")
+g1
+```
+
+### Tabla 2: Frecuencia (%) de Uso de Medios de Transporte ###
+
+```{r, echo=FALSE}
+knitr::kable(mtable,"pipe",col.names = gsub("[.]", " ", names(mtable)),align = "lccrr", caption="Uso porcentual de medios de transporte")
+```
+
+
+- Podemos observar en el **Grafico 2** y **Tabla 2** que los individuos de la muestra usan de forma predilecta el transporte público, es decir el 74.85% de personas usan este medio de transporte seguido del automóvil con una participación del 21.65%. Donde el medio de transporte menos usado es la bicicleta con un uso inferior al 1% de la muestra, seguido de el uso de motocicletas y el caminar con niveles del 0.52% y 2.65% respectivamente. Esto a nivel general nos sugiere que un bajo uso de medios de transporte como la bicicleta o el caminar incide en el riesgo de obesidad de forma directa, pues limita la presencia de factores de hábitos de vida saludables que eviten este riesgo.
+
+### Gráfico 8: Frecuencia de Consumo de Alimentos con Altas Calorias por Edad: ###
+
+```{r,warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(obesidad_f, aes(x =edad , y = fconsumo_altas_calorias, fill=stat(quantile))) +
+   stat_density_ridges(quantile_lines = FALSE,
+                      calc_ecdf = TRUE,
+                      geom ="density_ridges_gradient") +
+  scale_fill_brewer() +
+  theme_classic()+
+  xlab("Edad")+
+  ylab("Frecuencia consumo de alimentos con altas calorias")
+```
+
+- Podemos observar en el **Gráfico: 8** que las personas con baja frecuencia de consumo de alimentos con altas calorías se concentran entre los 20 y 25 años aproximadamente, mientras que las personas que si consumen frecuente alimentos con altas calorías tienen edades entre los 18 a 25 años aproximadamente. 
+El 75% de las personas que menos consumen alimentos altos en calorías tienen edades de 25 años o menos mientras que el 75% de personas que no consumen alimentos altos en calorías tienen 22 años o menos. A nivel general esto nos muestra que los grupos etarios más viejos consumen menos alimentos con alto contenido calórico dentro de ambas categorias, es decir aquellos que si lo hacen lo hacen en menor proprción que los grupos jóvenes. Por otra parte respecto a los que consumen y no alimentos de altas calorías, no hay una diferencia etaria es decir grupos de mismas edades en proporciones similares consumen y no alimentos altos en calorias, lo que nos sugiere que factores exógenos como los niveles de ingreso de los individuos y factores estructurales como los precios relativos más altos de alimentos saludables respecto a los alimentos ultraprocesados son factores que inciden en la elección de la dieta en grupos de edad, por ejemplo personas o grupos familiares con elasticidades precio de la demanda más altas respecto a los alimentos ultraprocesados se ven forzados a consumirlos dado su poder adquisitivo que grupos familiares o individuos con poder adquisitivo que tienen una elasticidad precio de la demanda menor en el mercado de alimentos y por ende ante cambios de los precios relativos de alimentos ultraprocesados y alimentos de alta calidad nutricional siguen teniendo la capacidad de elegir.
+
+### Gráfico 9: Frecuencia de Consumo de Alimentos Altos en Calorias y Peso de los Individuos:
+```{r,warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(obesidad_f, aes(x =peso , y = fconsumo_altas_calorias, fill=stat(quantile))) +
+   stat_density_ridges(quantile_lines = FALSE,
+                      calc_ecdf = TRUE,
+                      geom ="density_ridges_gradient") +
+  scale_fill_brewer() +
+  theme_classic()+
+  xlab("Peso")+
+  ylab("Frecuencia consumo de alimentos con altas calorias")
+```
+
+- Podemos observar en el **Gráfico 9** que dentro de las personas que no consumen alimentos altos en calorías su peso se concentra en 50 kg y 60kg aproximadamente mostrando un comportamiento bimodal con una asimetria relativamente positiva, es decir que aquellos que no consumen alimentos altos en calorias tienen un peso corporal bajo, ahora por otra parte las personas que consumen alimentos altos en calorias tienen valores de pesos concentrados en aproximadamente  60kg, 80 kg y más de 100kg es decir un comportamiento  aproximadamente trimodal con mayor apuntamiento en los 80kg. Esto nos sugiere que el consumo de alimentos altos en calorías incide de forma positiva en el peso corporal de una persona, pues el 15% de los individuos más pesados de los que no consumen esta clase de alimentos es menor al 15% de los individuos más pesados que si lo hacen efectivamente.
+
+### MODELO 1: ###
+```{r, echo=FALSE}
+obesidad_norm <- obesidad_f
+modelo_completo=lm(log(peso)~., data=obesidad_norm[,-c(17,18)])
+summary(modelo_completo)
+```
+
+### Selección del Modelo ###
+```{r, echo=FALSE}
+modelo_final <- stepAIC(modelo_completo, trace = FALSE, direction = "both")
+```
+
+### Modelo que Minimiza el AIC (Criterio de Información de Akaike): ###
+```{r, echo=FALSE}
+summary(modelo_final)
+```
+**Interpretación del Modelo:** 
+
+```{r}
+exp(modelo_final$coefficients)
+```
+
+- Una mujer sin antecedentes de sobrepeso, que no consume alimentos altos en calorias , merienda siempre, su frecuencia de consumo de alcohol es siempre, su medio de transporte usado es un automóvil tiene un nivel de peso 3.78 más que el de un hombre con las mismas características.
+
+- Por cada año que aumenta la edad de una mujer, sin antecedentes de sobrepeso, que no consume alimentos en altas calorías, siempre merienda, no monitorea sus calorias, siempre consume alcohol y usa automóvil para transportarse su peso aumenta en 1.012 kg más que un hombre con las mismas características.
+
+- Por cada punto porcentual que aumenta la estatura de una mujer, sin antecedentes de sobrepeso, que no consume alimentos en altas calorías, siempre merienda, no monitoriea sus calorias, siempre consume alcohol y usa automóvil para transportarse su peso aumenta 3.61 kg más que un hombre con las mismas características.
+
+- Una mujer con antecedentes de sobrepeso, que no consume alimentos altos en calorias ,merienda siempre, su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil pesa 1.28 kg más en promedio que una mujer sin antecedentes familiares de sobrepeso con las mismas características.
+  
+- Una mujer sin antecedentes de sobrepeso, que  consume alimentos altos en calorias ,merienda siempre, su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil pesa 1.05 kg más en promedio que una mujer que no consume alimentos altos en calorías con las mismas caracaterísticas.
+
+- Una mujer sin antecedentes de sobrepeso, que  no consume alimentos altos en calorias ,merienda siempre, su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil por cada porción adicional de vegetales su peso aumenta 1.10 kg.
+
+- Una mujer sin antecedentes de sobrepeso, que  no consume alimentos altos en calorias ,merienda frecuentemente, su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil pesa 0.86 kg menos que una persona con las mismas características pero que merienda siempre.
+
+- Una mujer sin antecedentes de sobrepeso, que  no consume alimentos altos en calorias ,no merienda , su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil pesa 1.1035 kg mas que una persona con las mismas características pero que merienda siempre.
+
+- Una mujer sin antecedentes de sobrepeso, que  no consume alimentos altos en calorias ,merienda a veces , su frecuencia de consumo de alcohol es siempre y su medio de transporte usado es un automóvil pesa 1.1227 kg mas que una persona con las mismas características pero que merienda siempre.
+
+- Una mujer, sin antecedentes de sobrepeso, que no consume alimentos altos en calorias, merienda siempre, no fuma, no monitorea sus calorías, siempre consume alcohol y su medio de transporte es el automóvil por cada litro adicional que bebe aumenta su peso aumenta en 1.0225 kg.
+
+- Una mujer, sin antecedentes de sobrepeso, que no consume alimentos altos en calorias, merienda siempre, monitorea sus calorías, siempre consume alcohol y su medio de transporte es el automóvil pesa 0.94 kg menos que una persona que no monitorea sus calorias con las mismas características.
+
+- Una mujer, sin antecedentes de sobrepeso, no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, siempre consume alcohol y usa como medio de transporte el automóvil, por cada punto que aumenta su frecuencia de actividad física su peso disminuye en 0.962 kg.
+
+- Una mujer, sin antecedentes de sobrepeso, no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, siempre consume alcohol y usa como medio de transporte el automóvil, por cada hora adicional que aumenta su tiempo de uso de tecnología su peso disminuye  0.9785 kg.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, consume alcohol frecuentemente y usa como medio de transporte el automóvil, pesa 0.9062 kg menos que una persona con las mismas características que bebe alcohol siempre.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, no consume alcohol y usa como medio de transporte el automóvil, pesa 0.1486% menos que una persona con las mismas características pero que bebe alcohol siempre.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, a veces consume alcohol y usa como medio de transporte el automóvil, pesa 0.079% menos que una persona con las mismas características pero que bebe alcohol siempre.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, a veces consume alcohol y usa como medio de transporte la bicicleta, pesa 1.06 kg más que una persona con las mismas características pero que usa automóvil.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, a veces consume alcohol y usa como medio de transporte la motocicleta, pesa 1.1731 kg más que una persona con las mismas características pero que usa automóvil.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, a veces consume alcohol y usa el transporte público, pesa 1.1784 kg más que una persona con las mismas características pero que usa automóvil.
+
+- Una mujer sin antecedentes de sobrepeso,que no consume alimentos altos en calorías, merienda siempre, no monitorea sus calorías, a veces consume alcohol y para transportarse camina, pesa 1.0709 kg más que una persona con las mismas características pero que usa automóvil.
+
+- El R2 Ajustado nos dice que el 62% de las variaciones de la variable peso son explicadas por las covariables asociadas al modelo, es decir antecedentes de sobrepeso, edad, consumo de alimentos altos en calorías, frecuencia de consumo de alcohol, estatura, frecuencia de consumo de vegetales etc.
+
+- Existe suficiente evidencia estadística para rechazar Ho en la prueba F de significancia conjunta, con un nivel de confianza del 95%, esto nos quiere decir que en su conjunto los estimadores obtenidos en el modelo son válidos.
+
+### **Supuestos del error** ###
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+residuales <- modelo_final$residuals
+ggplot(data=obesidad_f, aes(x=residuales))+
+  geom_histogram(fill="steelblue",color="blue")+
+  labs(x="Residuales",y="Frecuencia")+ theme_classic()+
+  geom_vline(aes(xintercept=mean(residuales)), show.legend = TRUE)+
+  geom_vline(aes(xintercept=median(residuales)), show.legend = TRUE)
+```
+
+### Normalidad del Error ###
+
+- **Ho: Existe normalidad** \n
+- **Ha: No existe normalidad** \n
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+shapiro.test(residuales)
+ks.test(residuales, "pnorm")
+```
+
+- Como se tiene una muestra grande es útil usar el test de Shapiro-Wilk, también se usará la prueba de Kolmogorov - Smirnov y se comparará con la corrección de Lilliefors.
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+ks.test(residuales, "pnorm")
+```
+
+- Según el test de Kolmogorov-Smirnov p-valor < α es decir, 0.05 > 2.2e-16, se rechaza H0 es decir que no existe normalidad en los residuales del modelo con un nivel de confianza del 95%.
+
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+library(nortest)
+lillie.test(residuales)
+```
+
+- Según el test de Lilliefors (Kolmogorov-Smirnov) p-valor < α es decir, 0.05 > 1.941e-14 se rechaza H0 es decir que no existe normalidad para los residuales del modelo con un nivel de confianza del 95%.
+
+
+### Independencia del Error ### 
+
+**Prueba de Durbin Watson** \n
+
+- **Ho: No hay Autocorrelación de los Residuos**
+- **Ha: Autocorrelación de los Residuos**
+
+```{r, echo=FALSE, warning=FALSE}
+dwtest(modelo_final)
+bgtest(modelo_final)
+```
+
+- Según el test de Durbin-Watson y Breusch-Godfrey p-valor < α ,es decir, 0.05 > 2.2e-16  se rechaza H0 es decir que existe autocorrelación en los residuales con un nivel de confianza del 95%.
+
+
+### Homocedasticidad ###
+
+- **Ho: Varianza del Error es constante** \n
+- **Ha: Varianza del Error no es constante**
+
+```{r, echo=FALSE}
+bptest(modelo_final)
+```
+- El test de Breusch-Pagan indica que p-valor < α, es decir 0.05 > 2.2e-16, se rechaza H0, por tanto la varianza del error no es constante con un nivel de confianza del 95%.
+ 
+
+### Multicolinealidad ###
+
+```{r, echo=FALSE, warning=FALSE}
+car::vif(modelo_final)
+```
+
+- Podemos observar que los Factores de Inflación de Varianza para todas las variables están por debajo de 5, lo que nos sugiere que no existe multicolinealidad entre las covariables del modelo.
+
+### Conclusiones: ###
+
+- Las variables que mayor impacto tienen en el peso de una persona son la estatura, siendo está la variable principal, lo que sugiere que los componenentes genéticos son más significativos en el peso que los ambientales, por esto los antecedentes familiares de sobrepeso también inciden fuertemente. Las otras covariables son el uso de transporte  público y el uso de motocicletas respecto al automóvil, en este caso el medio de transporte puede ser un proxy del poder adquisitivo de los individuos lo que se traduce en mejores niveles de vida y por ende acceso a mejores servicios de salud y nutrición para los que usan el medio de transporte más costoso que usualmente es el carro. Sin embargo el factor aérobico de medios de transporte como el uso de bicicleta y caminar desaceleran el aumento de peso.
+
+- Quienes a veces consumen merienda tienen influencia en el modelo como determinante del peso respecto a los que la consumen siempre, esto se puede deber a que obviar comidas a lo largo del día tiene efectos directos desacelerando el metabolismo causando aumento de peso y enfermedades en el sistema digestivo a mediano y largo plazo.
+
+- Las mujeres tienen una tendencia a tener mayor peso que los hombres, lo cuál podría explicarse a que estos tienen un metabolismo entre un 3% y 10% más acelerado que el de las mujeres, lo que permite que quemen grasa y pierdan peso de forma más fácil, según la Revista de Ginecología y Obstetricia (2015) La obesidad a pesar de ser una enfermedad de origen multifactorial es decir se compone de factores genéticos, habitos de salud y alimentación etc, dentro de el componente de salud, la salud mental puede ser fuertemente influenciadora en esta donde se define el ciclo de estrés/depresión - cambios en la alimentación, el cuál dice que cambios emocionales fuertes pueden desencadenar cambios alimenticios repentinos, donde las mujeres son más sensibles a cambios emocionales frecuentes en promedio respecto a los hombres, lo que puede llevar a incremento en el nivel de peso y riesgo de obesidad.
+
+- El consumo de alcohol a pesar de no ser estadísticamente significativa en el modelo, teóricamente el alcohol tiene un alto contenido calórico, en algunos casos el mezclar bebidas puede generar una ingesta de calorías iguales a las de una comida principal, pero con la ausencia de nutrientes, por otra parte el consumo de alcohol puede llevar nublar el juicio y tomar malas decisiones asociadas a la alimentación en estos periodos.
+
+- Las variables que mayor incidencia tienen en la pérdida de peso, serían el consumo frecuente de meriendas, pues permite obtener una estabilidad en el metabolismo y por otra parte el no consumir alcohol.
+
+- El modelo lineal no cumple con la totalidad de supuestos de Gauss Markov, lo que implica que para generar estimadores que puedan extenderse a la población también, deberemos usar Modelos Lineales Generalizados, de lo contrario los resultados solo son válidos dentro de la muestra y no para nuevos individuos.
+
+### Modelo Generalizado ###
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+# Creamos una función para hallar el Error Cuadratico Medio
+MSE <- function(y, y_pred){
+  n <- length(y)
+  ECM <- (1/n) * sum((y-y_pred)^2)
+  print(ECM)
+}
+
+# Creamos una función para hallar el R-cuadrado
+R2 <- function(y, y_pred){
+  y_barra <- mean(y)
+  R2 <- 1 - (sum((y-y_pred)^2) / sum((y-y_barra)^2))
+  print(R2)
+}
+
+# Creamos una función para el MAD
+MAD <- function(y, y_pred){
+  n <- length(y)
+  MAD <- (1/n) *(sum(abs(y_pred - y)))
+  print(MAD)
+}
+
+#Creamos una función para el MAPE
+MAPE <- function(y, y_pred){
+  n <- length(y)
+  MAPE <- (1/n) * sum(abs((y-y_pred)/y)) 
+}
+
+```
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+obesidad_f$IMC <- obesidad_f$peso/(obesidad_f$estatura^2)
+obesidad_f <- filter(obesidad_f, clasificacion_obesidad !="Insufficient_Weight", 
+                     clasificacion_obesidad != "Normal_Weight")
+
+# Creamos un modelo Gamma
+modelo_gamma <- glm(peso ~ ., family =Gamma(link = "inverse"), 
+                    data =  obesidad_f[,-c(17,18,19)])
+modelo_gamma <- step(modelo_gamma, trace = FALSE)
+
+# Métricas de Error Modelo Gamma Canónico
+MSE_gamma <- MSE(obesidad_f$peso,modelo_gamma$fitted.values)
+MAD_gamma <- MAD(obesidad_f$peso,modelo_gamma$fitted.values)
+MAPE_gamma <- MAPE(obesidad_f$peso,modelo_gamma$fitted.values)
+```
+```{r}
+# Creamos un modelo Gamma Log
+modelo_gamma_log <- glm(peso ~., 
+                        family =Gamma(link = "log"), 
+                        data = obesidad_f[,-c(17,18,19)])
+modelo_gamma_log <- step(modelo_gamma_log, trace = FALSE)
+
+# Métricas de Error Modelo Gamma Log
+MSE_gamma_log <- MSE(obesidad_f$peso,modelo_gamma_log$fitted.values)
+MAD_gamma_log <- MAD(obesidad_f$peso,modelo_gamma_log$fitted.values)
+MAPE_gamma_log <- MAPE(obesidad_f$peso,modelo_gamma_log$fitted.values)
+```
+```{r}
+exp(modelo_gamma_log$coefficients)
+```
+
+```{r}
+#Normal Inverso Enlace Canónico (1/mu^2)
+normal_inverso <-  glm(peso ~ ., 
+                        family =inverse.gaussian(link = "identity"), 
+                        data = obesidad_f[,-c(17,18,19)])
+normal_inverso <- step(normal_inverso, trace = FALSE)
+
+# Normal Inverso Enlace Log
+normal_inverso_log <-  glm(peso ~ ., 
+                        family =inverse.gaussian(link = "log"), 
+                        data = obesidad_f[,-c(17,18,19)])
+normal_inverso_log <- step(normal_inverso_log, trace = FALSE)
+
+# Metricas de Error Normal Inverso Canónico
+MSE_ni <- MSE(obesidad_f$peso,normal_inverso$fitted.values)
+MAD_ni <- MAD(obesidad_f$peso,normal_inverso$fitted.values)
+MAPE_ni <- MAPE(obesidad_f$peso,normal_inverso$fitted.values)
+
+# Metricas de Error Normal Inverso Log
+MSE_nil <- MSE(obesidad_f$peso,normal_inverso_log$fitted.values)
+MAD_nil <- MAD(obesidad_f$peso,normal_inverso_log$fitted.values)
+MAPE_nil <- MAPE(obesidad_f$peso,normal_inverso_log$fitted.values)
+
+# Construimos un dataframe para las medidas de error de los modelos
+medidas_error <- data.frame(modelo = c("Modelo Gamma", "Modelo Gamma Log",
+                                       "Modelo Normal Inverso", 
+                                       "Modelo Normal Inverso Log"),
+                            MSE = c(MSE_gamma,MSE_gamma_log,MSE_ni,MSE_nil),
+                            MAD = c(MAD_gamma, MAD_gamma_log, MAD_ni, MAD_nil),
+                            MAPE = c(MAPE_gamma, MAPE_gamma_log, MAPE_ni, MAPE_nil))
+#
+medidas_error$MSE <- round(medidas_error$MSE,4)
+medidas_error$MAD <- round(medidas_error$MAD, 4)
+medidas_error$MAPE <- round(medidas_error$MAPE, 4)
+kable(medidas_error)
+```
+
+```{r}
+summary(modelo_gamma)
+```
+
+```{r}
+exp(modelo_gamma$coefficients)
+```
+
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil tiene un IMC promedio de 82.1484
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil, por cada año adicional su IMC aumenta 1.001
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil por cada kilogramo de peso que aumente su imc aumenta en 1.011
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil por cada porción adicional al dia de vegetales su imc cae en 0.9915
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, merienda frecuentemente y usa como medio de transporte un automobil tiene un imc 0.9629 más bajo que el de una mujer que merienda siempre.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, a veces merienda y usa como medio de transporte un automobil tiene un imc 1.0021 más alto que una mujer con las mismas caracteristicas pero merienda siempre.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil por cada hora adicional que emplea en el uso de tecnología su imc se reduce en 0.9948
+
+- Una mujer sin antecedentes familiares de sobrepeso, que no consume alcohol, siempre merienda y usa como medio de transporte un automobil tiene un imc 1.004 mayor que el de una persona con las mismas características pero que consume alcohol.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte una bicicleta tiene un imc 1.004 veces mayor que el de alguien con las mismas caracteristicas que usa automovil para transportarse.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa transporte público tiene un IMC 1.002 veces menor que el de una mujer con las mismas características que usa automobil.
+
+- Un hombre sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte el automovil tiene un imc 1.032 veces mayor al de una mujer con las mismas características.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil por cada centimetro de estatura adicional el imc cae 0.2921.
+
+- Una mujer con antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte un automobil y no tiene antecedentes familiares de sobrepeso tiene un imc 1.04 veces más alto que el de una persona con las mismas características sin antecedentes familiares de sobrepeso.
+
+- Una mujer, sin antecedentes familiares de sobrepeso que siempre consume alcohol, siempre merienda  y usa como medio de transporte el automobil por cada comida principal adicional que consume al dia su imc cae -0.9970.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, no merienda y usa como medio de transporte un automobil tiene un imc 1.0163 veces más alto que alguien con las mismas características pero que merienda siempre.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que siempre consume alcohol, siempre merienda y usa como medio de transporte el automobil por cada rutina adicional de ejercicio que realiza a la semana su imc se reduce 0.9957
+
+- Una mujer sin antecedentes familiares de sobrepeso, que consume alcohol frecuentemente, siempre merienda y usa como medio de transporte el automobil tiene un imc 1.027 veces mayor que el de alguien con las mismas características pero que consume alcohol siempre.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que consume alcohol a veces, siempre merienda y usa como medio de transporte el automobil tiene un imc 0.9925 veces menor que el de una mujer con las mismas características pero que consume alcohol siempre.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que consume alcohol frecuentemente, siempre merienda y usa como medio de transporte la motocicleta tiene un imc 1.028 veces mayor que el de alguien con las mismas características pero que se transporta en automobil.
+
+- Una mujer sin antecedentes familiares de sobrepeso, que consume alcohol frecuentemente, siempre merienda y usa como medio de transporte caminar tiene un imc 1.019 veces mayor que el de alguien con las mismas características pero que se transporta en automobil.
+
+**Conclusiones sobre los factores que influyen en el IMC de mujeres sin antecedentes familiares de sobrepeso:**
+
+**Hábitos alimenticios:**
+
+- El consumo de alcohol siempre aumenta el IMC.
+
+- Merendar siempre o frecuentemente no tiene un efecto significativo en el IMC.
+
+- Comer una comida principal adicional al día reduce el IMC.
+
+- Consumir porciones adicionales de vegetales al día reduce el IMC.
+
+**Estilo de vida:**
+
+- Usar el automóvil como medio de transporte aumenta el IMC.
+
+- Usar la bicicleta como medio de transporte aumenta el IMC en comparación con el uso de automóvil.
+
+- Usar el transporte público reduce el IMC en comparación con el uso de automóvil.
+
+- Caminar como medio de transporte aumenta el IMC en comparación con el uso de automóvil.
+
+- Realizar rutinas de ejercicio adicionales a la semana reduce el IMC.
+
+- Pasar más horas usando tecnología reduce el IMC.
+
+**Factores físicos:**
+
+- El IMC aumenta con la edad (por cada año).
+- El IMC aumenta con el peso corporal (por cada kilogramo).
+- El IMC disminuye con la altura (por cada centímetro).
+- El IMC es mayor en hombres que en mujeres con las mismas características.
+
+**Antecedentes familiares:**
+
+- Tener antecedentes familiares de sobrepeso aumenta el IMC.
+
+**Otras observaciones:**
+
+- No merendar aumenta el IMC en comparación con merendar siempre.
+
+- Merendar a veces reduce el IMC en comparación con merendar siempre.
+
+- Consumir alcohol frecuentemente aumenta el IMC en comparación con consumirlo siempre.
+
+- Consumir alcohol a veces reduce el IMC en comparación con consumirlo siempre.
+- Usar la motocicleta como medio de transporte aumenta el IMC en comparación con el uso de automóvil.
+
+### Modelo Multinomial para las categorias de peso bajo, normal, obesidad y sobrepeso ###
+
+```{r, warning=FALSE, message=FALSE}
+# Modelo Multinomial
+mod_multinom <- vglm(tipo_peso ~ .,
+                     family = multinomial('logit'), 
+                     data = obesidad_f[,-c(16,17,19,8,15,14,19,13,11,10,5,2)])
+summary(mod_multinom)
+```
+```{r}
+exp(coef(mod_multinom))
+```
+**Modelo 1 **
+
+- Una mujer, que no consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias tiene 6.93 * 10^-27 veces menos riesgo de estar en la categoria de peso bajo que en la de sobrepeso.
+
+- Un hombre, que no consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias tiene 0.8652 veces menos riesgo de estar en la categoria de  peso bajo que en la categoria de sobrepeso.
+
+- Una mujer, que no consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias por cada centimetro adicional en su altura tiene un riesgo de 1.70 * 10^25 veces mayor de de estar en peso bajo que en sobrepeso.
+
+- Una mujer, que no consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias por cada kilogramo adicional en su peso tiene un riesgo 0.431 veces menor de estar en peso bajo que en sobrepeso.
+
+- Una mujer, que consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias tiene un riesgo 0.567 veces menor de estar en peso bajo que de estar en peso alto.
+
+- Una mujer, que no consume frecuentemente comidas altas en calorias, siempre merienda, no monitorea sus calorias por cada porción adicional de vegetales que consuma al día su riesgo de estar en peso bajo es 3.43 veces más que la de estar en sobrepeso.
+
+- Una mujer, que no consume alimentos altos en calorias, que frecuentemente merienda y no monitorea sus calorías tiene un riesgo de estar en peso bajo 1.53 veces más que de estar en sobrepeso.
+
+- Una mujer, que no consume alimentos altos en calorias, que no merienda y no monitorea sus calorías tiene un riesgo de estar en peso bajo 0.822 veces menos que de estar en sobrepeso.
+
+- Una mujer, que no consume alimentos altos en calorias, que merienda a veces y no monitorea sus calorías tiene un riesgo de estar en peso bajo 2.59 veces más que de estar en sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias, siempre merienda y monitorea sus calorias tiene un riesgo 0.26 veces menor de estar en peso bajo que de estar en sobrepeso.
+
+**Modelo 2 **
+
+- Una mujer que no consume alimentos altos en calorias, que siempre merienda y no monitorea sus calorías tiene un riesgo  1.84 * 10^-12 veces menor de estar en la categoria de peso normal que en la de sobrepeso.
+
+- Un hombre que no consume alimentos altos en calorias, que siempre merienda y no monitorea sus calorías tiene un riesgo 1.78 veces mayor de estar en la categoria de peso normal que en la de sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias, que siempre merienda y no monitorea sus calorías por cada centimetro adicional en su estatura tiene un riesgo de 1.55 * 10^15 de tener un peso normal que de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias, que siempre merienda y no monitorea sus calorías por cada kilogramo adicional en su peso tiene un riesgo de 0.639 veces menor de tener un peso normal que de tener sobrepeso.
+
+- Una mujer que consume alimentos altos en calorias, que siempre merienda y no monitorea sus calorías tiene un riesgo 0.475 veces menor de tener peso normal que de tener sobrepeso.
+
+- una mujer, que no consume alimentos altos en calorias, siempre merienda, no monitorea sus calorias por cada porción adicional al dia de vegetales tiene un riesgo de 1.72 veces mayor de tener peso normal que de tener sobrepeso.
+
+- una mujer, que no consume alimentos altos en calorías, merienda frecuentemente y no monitorea sus calorias tiene un riesgo  0.601 veces menor de tener peso normal que de tener sobrepeso.
+
+- una mujer, que no consume alimentos altos en calorías, no merienda y no monitorea sus calorias tiene un riesgo  0.11 veces menor de tener peso normal que de tener sobrepeso.
+
+- una mujer, que no consume alimentos altos en calorías, a veces merienda y no monitorea sus calorias tiene un riesgo  0.15 veces menor de tener peso normal que de tener sobrepeso.
+
+- una mujer que no consume alimentos altos en calorías, siempre merienda y monitorea sus calorias, tiene un riesgo 0.327 veces menor de tener un peso normal que de tener sobrepeso.
+
+**Modelo 3 **
+
+- Una mujer, que siempre merienda y no consume frecuentemente alimentos altos en calorías,no monitorea estas mismas,  tiene un riesgo de 3.07 * 10^18 veces de tener ser obesa que de tener sobrepeso.
+
+- un hombre, que no consume frecuentemente alimentos altos en calorias, siempre merienda, no monitorea sus calorias tiene un riesgo de 0.287 veces menos de ser obeso que de tener sobrepeso.
+
+- Una mujer que no consume comidas altas en calorias frecuentemente, siempre merienda y no monitorea sus calorías por cada centímetro adicional de altura tiene un riesgo 6.82 * 10^-24 veces menor de ser obeso que de tener sobrepeso.
+
+- Una mujer que no consume comidas altas en calorias frecuentemente, siempre merienda y no monitorea sus calorías por cada kilogramo adicional de peso corporal, tiene un riesgo de 1.72 veces de tener obesidad que de tener sobrepeso.
+
+- Una mujer que consume comidas altas en calorias frecuentemente, siempre merienda y no monitorea sus calorías tiene un riesgo 3.74 veces mayor de tener obesidad que de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias frecuentemente, siempre merienda y no monitorea sus calorías por cada porción adicional de vegetales que consume al día, su riesgo de tener obesidad se reduce 0.702 veces menos que el de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias frecuentemente, frecuentemente merienda y no monitorea sus calorías su riesgo de tener obesidad es 1,21 veces más que de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias frecuentemente, no merienda y no monitorea sus calorías tiene un riesgo 0.62 veces menor de tener obesidad que de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias frecuentemente, a veces merienda y no monitorea sus calorías tiene un riesgo 2.01 veces mayor de tener obesidad que de tener sobrepeso.
+
+- Una mujer que no consume alimentos altos en calorias frecuentemente, siempre merienda y monitorea sus calorías tiene un riesgo 0.434 veces menor de tener obesidad que de tener sobrepeso. 
+
+
+**Resumen sobre el peso corporal:**
+
+**Peso bajo:**
+
+- Las mujeres que comen con poca frecuencia comidas altas en calorías y siempre meriendan sin contar las calorías tienen un menor riesgo de estar en la categoría de peso bajo en comparación con la categoría de sobrepeso.
+
+- La altura y el peso corporal no afectan significativamente el riesgo de estar en peso bajo para este grupo.
+
+- Comer muchas verduras aumenta el riesgo de estar en peso bajo.
+
+- Merendar con frecuencia y no contar las calorías aumenta el riesgo de estar en peso bajo.
+
+- No merendar y no contar las calorías reduce el riesgo de estar en peso bajo.
+
+- Merendar a veces y no contar las calorías aumenta el riesgo de estar en peso bajo.
+
+- Contar las calorías reduce el riesgo de estar en peso bajo.
+
+**Peso normal:**
+
+- Las mujeres que comen con poca frecuencia comidas altas en calorías y siempre meriendan sin contar las calorías tienen un menor riesgo de estar en la categoría de peso normal en comparación con la categoría de sobrepeso.
+
+- Ser más alta aumenta el riesgo de estar en peso normal para este grupo.
+
+- Pesar más reduce el riesgo de estar en peso normal.
+
+- Comer muchas verduras aumenta el riesgo de estar en peso normal.
+
+- Merendar con frecuencia y no contar las calorías reduce el riesgo de estar en peso normal.
+
+- No merendar y no contar las calorías reduce aún más el riesgo de estar en peso normal.
+
+- Merendar a veces y no contar las calorías reduce el riesgo de estar en peso normal.
+
+- Contar las calorías reduce el riesgo de estar en peso normal.
+
+**Obesidad:**
+
+- Las mujeres que comen con poca frecuencia comidas altas en calorías y siempre meriendan sin contar las calorías tienen un mayor riesgo de estar en la categoría de obesidad en comparación con la categoría de sobrepeso.
+
+- La altura no afecta significativamente el riesgo de estar en obesidad para este grupo.
+
+- Pesar más aumenta el riesgo de estar en obesidad.
+
+- Comer muchas verduras reduce el riesgo de estar en obesidad.
+
+- Merendar con frecuencia y no contar las calorías aumenta el riesgo de estar en obesidad.
+
+- No merendar y no contar las calorías reduce el riesgo de estar en obesidad.
+
+- Merendar a veces y no contar las calorías aumenta el riesgo de estar en obesidad.
+
+- Contar las calorías reduce el riesgo de estar en obesidad.
+
+**Diferencias de género:**
+
+- Los hombres tienen un menor riesgo de estar en la categoría de peso bajo que las mujeres en el modelo 1.
+
+- Los hombres tienen un mayor riesgo de estar en la categoría de peso normal que las mujeres en el modelo 2.
+
+- Los hombres tienen un menor riesgo de estar en la categoría de obesidad que las mujeres en el modelo 3.
+
+
+### Bibliografía: ###
+
+- América: Índice de Calidad de Vida por País 2019. (s. f.). Tomado de: https://es.numbeo.com/calidad-de-vida/clasificaciones-por-pa%C3%ADs?region=019&title=2019
+
+- Ballarino, F. (2019, 10 junio). Argentina lidera el ranking de consumo de azúcar en la región. Perfil. https://www.perfil.com/noticias/ciencia/argentina-lidera-el-ranking-de-consumo-de-azucar-en-la-region.phtml
+
+- Hospital Clínic de Barcelona. (2022, 22 marzo). ¿Se puede acelerar el metabolismo de manera natural? | PortalCLÍNIC [Vídeo]. YouTube. https://www.youtube.com/watch?v=VhFhOuFSqYg
+
+- La obesidad se triplica en América Latina por un mayor consumo de ultraprocesados y comida rápida. (2021, 11 octubre). Noticias ONU, Tomado de: https://news.un.org/es/story/2019/11/1465321
+
+- Naciones Unidas pide acciones urgentes para frenar el alza del hambre y la obesidad en América Latina y el Caribe. (s. f.), Tomado de: https://www.unicef.org/colombia/comunicados-prensa/naciones-unidas-pide-acciones-urgentes-para-frenar-el-alza-del-hambre
+
+- Nuevo informe de la ONU: el hambre en América Latina y el Caribe aumentó en 13,8 millones de personas en solo un año. (s. f.), Tomado de: https://www.unicef.org/lac/comunicados-prensa/nuevo-informe-de-la-onu-el-hambre-en-america-latina-y-el-caribe-aumento#:~:text=La%20prevalencia%20del%20hambre%20en,aument%C3%B3%20en%202%20puntos%20porcentuales.
+
+- Pasquali, M. (2021, 14 octubre). Un 30% de latinoamericanos no tiene lo suficiente para comer. Statista Daily Data, Tomado de: https://es.statista.com/grafico/25968/dificultades-para-alimentarse-en-america-latina/
+- Piedrahita, D. F. O. (2023, 7 julio). Dos de las ciudades que tienen el peor tráfico en América Latina están en Colombia. Diario la República. Tomado de: https://www.larepublica.co/globoeconomia/dos-de-las-ciudades-que-tienen-el-peor-trafico-en-america-latina-estan-en-colombia-3653993
+
+- Pulso, R., & Pulso, R. (2022, 24 marzo). ¿Cuántas horas están conectados los usuarios en Latinoamérica a su smartphone? Pulso Capital. Tomado de: https://pulsocapital.com/cuantas-horas-estan-conectados-los-usuarios-en-latinoamerica-a-su-smartphone/
+
+- Rpp, R. (2018, 5 septiembre). Latinoamérica es la región con más población con actividad física insuficiente. RPP Noticias. Tomado de: https://rpp.pe/vital/salud/latinoamerica-es-la-region-con-mas-poblacion-con-actividad-fisica-insuficiente-noticia-1147908?ref=rpp
+
+- World Health Organization: WHO. (2022, 9 mayo). Alcohol. Tomado de: https://www.who.int/es/news-room/fact-sheets/detail/alcohol
+
+- World Health Organization: WHO. (2024, 1 marzo). Obesidad y sobrepeso. Tomado de: https://www.who.int/es/news-room/fact-sheets/detail/obesity-and-overweight#:~:text=Desde%201975%2C%20la%20obesidad%20se,y%20el%2013%25%20eran%20obesas.
+
+- Rita P. Fung L. (2015) Obesidad y Mujer. Revista de Obstetricia y Ginecología de Venezuela. vol 75, no. 4 
+<div/>
